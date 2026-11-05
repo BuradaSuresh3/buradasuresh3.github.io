@@ -18,7 +18,7 @@ nav .wrap{display:flex;align-items:center;justify-content:space-between;height:7
 .logo span{color:var(--a1)}
 nav ul{display:flex;gap:26px;list-style:none;margin:0;padding:0;font-size:1.02rem;font-weight:600;color:var(--text)}
 nav ul a:hover{color:var(--a1)}
-@media(max-width:1000px){nav ul{display:none}}
+@media(max-width:1100px){nav ul{display:none}}
 .hero{padding:80px 0 70px;background:radial-gradient(520px 320px at 82% 25%,var(--glow),transparent 70%),radial-gradient(460px 260px at 5% 0,rgba(249,115,22,.10),transparent 70%)}
 .hero-in{display:grid;grid-template-columns:1fr auto;gap:48px;align-items:center}
 .pill{display:inline-flex;gap:8px;align-items:center;padding:7px 15px;border:1px solid var(--line);border-radius:99px;background:var(--surface);font-size:.82rem;color:var(--muted)}
@@ -178,6 +178,78 @@ footer{padding:28px 0;text-align:center;color:var(--muted);font-size:.85rem;bord
 <div class="card"><small>Location</small>Hyderabad, India</div>
 </div></div></section>
 
-<footer><span class="ft">© 2026 Burada Suresh</span></footer>
+<footer><span class="ft">© 2026 Burada Suresh</span><button class="lock" id="lock">Edit page</button></footer>
+<script>
+(function(){
+var CODE="9014",editing=false,lockBtn=document.getElementById("lock");
+var EDIT="h2,h3,p,li,.when,.tag,.fv,.lead,h1 .name,.pill>span:last-child,.sub,small,footer .ft";
+var ITEMS=":scope>.card,:scope>.it,:scope>.fact";
+function $(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));}
+function el(t,c,x){var e=document.createElement(t);e.className=c||"";if(x!=null)e.textContent=x;return e;}
+function ce(e){e.setAttribute("contenteditable","plaintext-only");}
+function modal(title,val,pw,cb){
+var o=el("div","eui ov"),b=el("div","mb"),h=el("h4","",title),i=document.createElement("input");
+i.value=val||"";if(pw)i.type="password";
+var r=el("div","mr"),ok=el("button","mbtn p","OK"),no=el("button","mbtn","Cancel");
+no.onclick=function(){o.remove()};ok.onclick=function(){var v=i.value;o.remove();cb(v)};
+i.onkeydown=function(e){if(e.key==="Enter")ok.click()};
+r.append(no,ok);b.append(h,i,r);o.append(b);document.body.append(o);i.focus();}
+$(".fact,.contact .card").forEach(function(c){
+Array.prototype.slice.call(c.childNodes).forEach(function(n){
+if(n.nodeType===3&&n.textContent.trim()){c.replaceChild(el("span","fv",n.textContent.trim()),n);}});});
+function addX(it){
+var d=el("button","eui xb","\u00d7");d.title="Delete";
+d.onclick=function(e){e.preventDefault();e.stopPropagation();it.remove()};it.append(d);
+if(it.querySelector(".tag")){var t=el("button","eui tb","+ tag");
+t.onclick=function(e){e.preventDefault();e.stopPropagation();var g=el("span","tag","New");ce(g);it.insertBefore(g,t)};it.append(t);}
+if(it.tagName==="A"&&it.getAttribute("href")){var l=el("button","eui lb","Edit link");
+l.onclick=function(e){e.preventDefault();e.stopPropagation();modal("Link (mailto:, tel:, or https://)",it.getAttribute("href"),false,function(v){if(v)it.setAttribute("href",v)})};it.append(l);}}
+function status(m){var s=document.getElementById("st");if(s)s.textContent=m;}
+function save(){
+var clone=document.documentElement.cloneNode(true);
+$(".eui",clone).forEach(function(x){x.remove()});
+$("[contenteditable]",clone).forEach(function(x){x.removeAttribute("contenteditable")});
+clone.querySelector("body").classList.remove("editing");
+var html="<!DOCTYPE html>\n"+clone.outerHTML;
+function put(tk){
+status("Saving...");
+var api="https://api.github.com/repos/BuradaSuresh3/buradasuresh3.github.io/contents/index.html";
+var h={"Authorization":"Bearer "+tk,"Accept":"application/vnd.github+json"};
+fetch(api,{headers:h}).then(function(r){if(!r.ok)throw r.status;return r.json()}).then(function(d){
+var body={message:"Update portfolio",content:btoa(unescape(encodeURIComponent(html))),sha:d.sha,branch:"main"};
+return fetch(api,{method:"PUT",headers:h,body:JSON.stringify(body)});
+}).then(function(r){if(!r.ok)throw r.status;status("Saved! Live in 1-2 minutes.");})
+.catch(function(c){if(c===401||c===403||c===404){try{localStorage.removeItem("gh_tk")}catch(e){}status("Token not accepted. Click Save to enter it again.");}else{status("Could not save. Check your internet.");}});
+}
+var tk=null;try{tk=localStorage.getItem("gh_tk")}catch(e){}
+if(tk){put(tk);}else{modal("Paste your GitHub token to save","",true,function(v){if(!v)return;try{localStorage.setItem("gh_tk",v)}catch(e){}put(v);});}
+}
+function enter(){
+if(editing)return;editing=true;document.body.classList.add("editing");
+$(EDIT).forEach(ce);
+$(".grid,.skills,.tl,.facts").forEach(function(c){
+$(ITEMS,c).forEach(addX);
+var a=el("button","eui addb","+ Add item");
+a.onclick=function(){var it=$(ITEMS,c),l=it[it.length-1];if(!l)return;
+var n=l.cloneNode(true);$(".eui",n).forEach(function(x){x.remove()});
+$(EDIT,n).forEach(ce);c.append(n);addX(n);};
+c.after(a);});
+var tb=el("div","eui tbar"),ph=el("button","","Change photo"),sv=el("button","sv","Save changes"),cn=el("button","","Cancel"),st=el("span","");
+st.id="st";
+ph.onclick=function(){var f=document.createElement("input");f.type="file";f.accept="image/*";
+f.onchange=function(){var r=new FileReader();r.onload=function(){var im=new Image();
+im.onload=function(){var s=Math.min(im.width,im.height),c=document.createElement("canvas");
+c.width=c.height=420;c.getContext("2d").drawImage(im,(im.width-s)/2,(im.height-s)/2,s,s,0,0,420,420);
+document.querySelector(".photo").src=c.toDataURL("image/jpeg",0.82);};im.src=r.result;};
+r.readAsDataURL(f.files[0]);};f.click();};
+sv.onclick=save;cn.onclick=function(){location.reload()};
+tb.append(ph,sv,cn,st);document.body.append(tb);}
+document.addEventListener("click",function(e){if(editing&&e.target.closest&&e.target.closest("a")&&!e.target.closest(".eui"))e.preventDefault();},true);
+document.addEventListener("focusout",function(e){var t=e.target;
+if(editing&&t.matches&&t.matches(".tag,li")&&!t.textContent.trim())t.remove();});
+function ask(msg){modal(msg,"",true,function(v){if(v===CODE){lockBtn.style.display="none";enter();}else if(v){ask("Incorrect code. Try again");}});}
+if(lockBtn)lockBtn.onclick=function(){ask("Enter access code");};
+})();
+</script>
 </body>
 </html>
